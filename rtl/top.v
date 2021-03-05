@@ -126,44 +126,6 @@ module top # (
              .AdcDataCh2   (AdcDataCh2),
              .AdcDataCh3   (AdcDataCh3)
          );
-         
-    ila_0 Inst_ila
-    (
-        .clk(SysClk100M),
-        .probe0(AdcDataCh0[13:0]),
-        .probe1(AdcDataCh1[13:0]),
-        .probe2(AdcDataCh2[13:0]),
-        .probe3(AdcDataCh3[13:0]),
-        .probe4(AdcDataValid)
-    );
-  design_1_wrapper design_1_i
-         (.DDR_0_addr(DDR_0_addr),
-          .DDR_0_ba(DDR_0_ba),
-          .DDR_0_cas_n(DDR_0_cas_n),
-          .DDR_0_ck_n(DDR_0_ck_n),
-          .DDR_0_ck_p(DDR_0_ck_p),
-          .DDR_0_cke(DDR_0_cke),
-          .DDR_0_cs_n(DDR_0_cs_n),
-          .DDR_0_dm(DDR_0_dm),
-          .DDR_0_dq(DDR_0_dq),
-          .DDR_0_dqs_n(DDR_0_dqs_n),
-          .DDR_0_dqs_p(DDR_0_dqs_p),
-          .DDR_0_odt(DDR_0_odt),
-          .DDR_0_ras_n(DDR_0_ras_n),
-          .DDR_0_reset_n(DDR_0_reset_n),
-          .DDR_0_we_n(DDR_0_we_n),
-          .FIXED_IO_0_ddr_vrn(FIXED_IO_0_ddr_vrn),
-          .FIXED_IO_0_ddr_vrp(FIXED_IO_0_ddr_vrp),
-          .FIXED_IO_0_mio(FIXED_IO_0_mio),
-          .FIXED_IO_0_ps_clk(FIXED_IO_0_ps_clk),
-          .FIXED_IO_0_ps_porb(FIXED_IO_0_ps_porb),
-          .FIXED_IO_0_ps_srstb(FIXED_IO_0_ps_srstb),
-         
-          .SPI0_MISO_I_0(ADC_MISO),
-          .SPI0_MOSI_O_0(ADC_MOSI),
-          .SPI0_SCLK_O_0(ADC_SCLK),
-          .SPI0_SS_O_0(ADC_CS)
-          );
 endmodule
 
 //(* CORE_GENERATION_INFO = "dcm,clk_wiz_v3_6,{component_name=dcm,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=1,clkin1_period=8.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
