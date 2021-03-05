@@ -1,5 +1,5 @@
 *
 !Adc344x.tcl
-!NandFlashController_ip.tcl
+!generate_ip.tcl
 !.gitignore
 !Makefile
