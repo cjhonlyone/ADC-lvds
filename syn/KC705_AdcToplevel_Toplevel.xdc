@@ -82,13 +82,13 @@ create_clock -period 10.000 -name SysRefClk -waveform {0.000 5.000} [get_ports S
 # Remove the path from the ADC forwarded clock package pin to all ISERDES.CLK pins from the timing
 # engine and timing checking for place&route.
 set_false_path  -from [get_ports DCLK_p_pin] \
-                -through [get_cells Inst_AdcClock/AdcClock_I_Isrds_Master] \
-                -through [get_cells Inst_AdcClock/AdcClock_I_Bufio] \
+                -through [get_cells */Inst_AdcClock/AdcClock_I_Isrds_Master] \
+                -through [get_cells */Inst_AdcClock/AdcClock_I_Bufio] \
                 -to [get_cells -hierarchical "*Isrds*"]
 #
 # Create a clock path for the timing engine from the BUFR output to all elements using this clock.
 create_generated_clock -name AdcBitClkDiv \
-                        -source [get_pins Inst_AdcClock/AdcClock_I_Isrds_Master/DDLY] \
+                        -source [get_pins */Inst_AdcClock/AdcClock_I_Isrds_Master/DDLY] \
                         -divide_by 4 [get_nets -hierarchical "*IntClkDiv*"]
 #
 set_false_path -from [get_clocks AdcBitClkDiv] -to [get_clocks AdcBitClk]
