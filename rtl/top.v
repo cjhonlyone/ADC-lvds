@@ -19,8 +19,8 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 module top # (
-    parameter C_AdcChnls = 2,     // Number of ADC in a package
-    parameter C_AdcWireInt = 2,  // 2 = 2-wire, 1 = 1-wire interface
+    parameter C_AdcChnls = 8,     // Number of ADC in a package
+    parameter C_AdcWireInt = 1,  // 2 = 2-wire, 1 = 1-wire interface
     parameter C_AdcBits = 14,
     parameter C_AdcBytOrBitMode = 0, // 1 = BIT mode, 0 = BYTE mode,
     parameter C_AdcMsbOrLsbFst = 1 // 0 = MSB first, 1 = LSB first
@@ -62,16 +62,12 @@ module top # (
     inout FIXED_IO_0_ps_srstb,
     
     // ADC is Slave
-    output ADC_SCLK,
-    input  ADC_MISO,
-    output ADC_CS,
-    output ADC_MOSI,
-    output ADC_PDN,
-    output ADC_RESET
+    inout                   spi_sdio,
+    output                  spi_clk,
+    output                  spi_cs
 );
-
     
-    wire SysClk100M;
+    wire SysClk50M;
     
     wire SysRefClk        ;
     wire AdcIntrfcRst     ;
@@ -84,48 +80,97 @@ module top # (
     wire AdcIdlyCtrlRdy   ;
     
     wire MMCM_Rst;
-    MMCM Inst_MMCM
-     (
-         // Clock in ports
-        .CLK_IN1_p(SysClk_p_pin),
-        .CLK_IN1_n(SysClk_n_pin),
-          // Clock out ports
-        .CLK_OUT1(SysClk100M),
-        .CLK_OUT2(SysRefClk),
-        .CLK_OUT3(),
-          // Status and control signals
-        .RESET(0),
-        .LOCKED(MMCM_Rst)
-     );
-     assign ADC_PDN = 0;
-     assign ADC_RESET = ~MMCM_Rst;
-     
-    wire AdcDataValid;
-    wire [13:0] AdcDataCh0;
-    wire [13:0] AdcDataCh1;
-    wire [13:0] AdcDataCh2;
-    wire [13:0] AdcDataCh3;
+      
+    wire [7:0] AdcDataValid;
+    wire [15:0] AdcDataCh0;
+    wire [15:0] AdcDataCh1;
+    wire [15:0] AdcDataCh2;
+    wire [15:0] AdcDataCh3;
+    wire [15:0] AdcDataCh4;
+    wire [15:0] AdcDataCh5;
+    wire [15:0] AdcDataCh6;
+    wire [15:0] AdcDataCh7;
     
-	ADC344x_Top #(
-             .C_AdcChnls(C_AdcChnls),
-             .C_AdcWireInt(C_AdcWireInt)
-         ) inst_ADC3444_Top (
-             .DCLK_p_pin   (DCLK_p_pin),
-             .DCLK_n_pin   (DCLK_n_pin),
-             .FCLK_p_pin   (FCLK_p_pin),
-             .FCLK_n_pin   (FCLK_n_pin),
-             .DATA_p_pin   (DATA_p_pin),
-             .DATA_n_pin   (DATA_n_pin),
-             .SysDlyClk    (SysRefClk),
-             .SysRst       (~MMCM_Rst),
-             .SysSampleClk (SysClk100M),
-             .SysSampleRst (1'b0),
-             .AdcDataValid (AdcDataValid),
-             .AdcDataCh0   (AdcDataCh0),
-             .AdcDataCh1   (AdcDataCh1),
-             .AdcDataCh2   (AdcDataCh2),
-             .AdcDataCh3   (AdcDataCh3)
-         );
+    wire spi_mosi_o;
+    wire spi_miso_i;
+    wire spi_tri_o;
+    wire [7:0] spi_cs_o;
+    
+    assign spi_cs = spi_cs_o[0];
+
+    wire AdcFrmClk;
+    
+    IOBUF 
+        #(.DRIVE("12"), .SLEW("FAST"))
+    Inst_spidio_IOBUF
+        (.O(spi_miso_i), .IO(spi_sdio), .I(spi_mosi_o), .T(spi_tri_o));
+        
+	AdcLVDS #(
+			.C_AdcChnls(8),
+			.C_AdcWireInt(1)
+		) inst_AdcLVDS (
+			.DCLK_p_pin   (DCLK_p_pin),
+			.DCLK_n_pin   (DCLK_n_pin),
+			.FCLK_p_pin   (FCLK_p_pin),
+			.FCLK_n_pin   (FCLK_n_pin),
+			.DATA_p_pin   (DATA_p_pin),
+			.DATA_n_pin   (DATA_n_pin),
+			.SysRst       (0),
+			.AdcFrmClk    (AdcFrmClk),
+			.AdcDataValid (AdcDataValid),
+			.AdcDataCh0   (AdcDataCh0),
+			.AdcDataCh1   (AdcDataCh1),
+			.AdcDataCh2   (AdcDataCh2),
+			.AdcDataCh3   (AdcDataCh3),
+			.AdcDataCh4   (AdcDataCh4),
+			.AdcDataCh5   (AdcDataCh5),
+			.AdcDataCh6   (AdcDataCh6),
+			.AdcDataCh7   (AdcDataCh7)
+		);
+
+    ila_0 Inst_ila
+    (
+        .clk(AdcFrmClk),
+        .probe0(AdcDataCh0),
+        .probe1(AdcDataCh1),
+        .probe2(AdcDataCh2),
+        .probe3(AdcDataCh3),
+        .probe4(AdcDataCh4),
+        .probe5(AdcDataCh5),
+        .probe6(AdcDataCh6),
+        .probe7(AdcDataCh7),
+        .probe8(AdcDataValid)
+    );
+    
+  design_1_wrapper design_1_i
+         (.DDR_0_addr(DDR_0_addr),
+          .DDR_0_ba(DDR_0_ba),
+          .DDR_0_cas_n(DDR_0_cas_n),
+          .DDR_0_ck_n(DDR_0_ck_n),
+          .DDR_0_ck_p(DDR_0_ck_p),
+          .DDR_0_cke(DDR_0_cke),
+          .DDR_0_cs_n(DDR_0_cs_n),
+          .DDR_0_dm(DDR_0_dm),
+          .DDR_0_dq(DDR_0_dq),
+          .DDR_0_dqs_n(DDR_0_dqs_n),
+          .DDR_0_dqs_p(DDR_0_dqs_p),
+          .DDR_0_odt(DDR_0_odt),
+          .DDR_0_ras_n(DDR_0_ras_n),
+          .DDR_0_reset_n(DDR_0_reset_n),
+          .DDR_0_we_n(DDR_0_we_n),
+          .FIXED_IO_0_ddr_vrn(FIXED_IO_0_ddr_vrn),
+          .FIXED_IO_0_ddr_vrp(FIXED_IO_0_ddr_vrp),
+          .FIXED_IO_0_mio(FIXED_IO_0_mio),
+          .FIXED_IO_0_ps_clk(FIXED_IO_0_ps_clk),
+          .FIXED_IO_0_ps_porb(FIXED_IO_0_ps_porb),
+          .FIXED_IO_0_ps_srstb(FIXED_IO_0_ps_srstb),
+          
+          .spi_miso_i_0(spi_miso_i),
+          .spi_mosi_o_0(spi_mosi_o),
+          .spi_clk_o_0(spi_clk),
+          .spi_cs_o_0(spi_cs_o),
+          .spi_tri_o_0(spi_tri_o)
+          );
 endmodule
 
 //(* CORE_GENERATION_INFO = "dcm,clk_wiz_v3_6,{component_name=dcm,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=1,clkin1_period=8.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
@@ -182,11 +227,11 @@ module MMCM
     .COMPENSATION         ("ZHOLD"),
     .STARTUP_WAIT         ("FALSE"),
     .DIVCLK_DIVIDE        (1),
-    .CLKFBOUT_MULT_F      (10.000),
+    .CLKFBOUT_MULT_F      (20.000),
     .CLKFBOUT_PHASE       (0.000),
     .CLKFBOUT_USE_FINE_PS ("FALSE"),
 
-    .CLKOUT0_DIVIDE_F     (10.000),
+    .CLKOUT0_DIVIDE_F     (20.000),
     .CLKOUT0_PHASE        (0.000),
     .CLKOUT0_DUTY_CYCLE   (0.500),
     .CLKOUT0_USE_FINE_PS  ("FALSE"),
@@ -201,7 +246,7 @@ module MMCM
     .CLKOUT2_DUTY_CYCLE   (0.500),
     .CLKOUT2_USE_FINE_PS  ("FALSE"),
 
-    .CLKIN1_PERIOD        (10.000),
+    .CLKIN1_PERIOD        (20.000),
     .REF_JITTER1          (0.010))
   mmcm_adv_inst
     // Output clocks
@@ -258,8 +303,10 @@ module MMCM
    (.O   (CLK_OUT2),
     .I   (clkout1));
 
-  BUFG clkout3_buf
-   (.O   (CLK_OUT3),
-    .I   (clkout2));
+//  BUFG clkout3_buf
+//   (.O   (CLK_OUT3),
+//    .I   (clkout2));
 
 endmodule
+
+

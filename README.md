@@ -1,3 +1,4 @@
-# ADC344x Interface
+# ADC general LVDS Interface
 
 ADC3441/ADC3442/ADC3443/ADC3444
+AD9525

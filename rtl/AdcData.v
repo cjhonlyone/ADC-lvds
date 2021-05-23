@@ -63,10 +63,12 @@ module AdcData(
      );
 
      always @ (posedge DatClkDiv) begin
-         ADCData0 <= {ADCDataLine1[7],ADCDataLine1[8],ADCDataLine1[9],ADCDataLine1[10],ADCDataLine1[11],ADCDataLine1[12],ADCDataLine1[13],
-                     ADCDataLine0[7],ADCDataLine0[8],ADCDataLine0[9],ADCDataLine0[10],ADCDataLine0[11],ADCDataLine0[12],ADCDataLine0[13]};
-         ADCData1 <= {ADCDataLine1[0],ADCDataLine1[1],ADCDataLine1[2],ADCDataLine1[3],ADCDataLine1[4],ADCDataLine1[5],ADCDataLine1[6],
-                     ADCDataLine0[0],ADCDataLine0[1],ADCDataLine0[2],ADCDataLine0[3],ADCDataLine0[4],ADCDataLine0[5],ADCDataLine0[6]};
+//         ADCData0 <= {ADCDataLine1[7],ADCDataLine1[8],ADCDataLine1[9],ADCDataLine1[10],ADCDataLine1[11],ADCDataLine1[12],ADCDataLine1[13],
+//                     ADCDataLine0[7],ADCDataLine0[8],ADCDataLine0[9],ADCDataLine0[10],ADCDataLine0[11],ADCDataLine0[12],ADCDataLine0[13]};
+//         ADCData1 <= {ADCDataLine1[0],ADCDataLine1[1],ADCDataLine1[2],ADCDataLine1[3],ADCDataLine1[4],ADCDataLine1[5],ADCDataLine1[6],
+//                     ADCDataLine0[0],ADCDataLine0[1],ADCDataLine0[2],ADCDataLine0[3],ADCDataLine0[4],ADCDataLine0[5],ADCDataLine0[6]};
+         ADCData0 <= ADCDataLine0;
+         ADCData1 <= ADCDataLine0;
      end
      
      assign DatData0 = {ADCData0[13],ADCData0[13],ADCData0};

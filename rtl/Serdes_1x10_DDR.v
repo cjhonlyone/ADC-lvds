@@ -5,7 +5,7 @@
 // 
 // Create Date: 2021/01/08 10:55:34
 // Design Name: 
-// Module Name: Serdes_1x14_DDR
+// Module Name: Serdes_1x10_DDR
 // Project Name: 
 // Target Devices: 
 // Tool Versions: vivado 2017.4
@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Serdes_1x14_DDR(
+module Serdes_1x10_DDR(
     
     input CLK,
     input CLKDIV,
@@ -29,7 +29,7 @@ module Serdes_1x14_DDR(
     input DDLY,
     input RST,
     
-    output [13:0] Q
+    output [9:0] Q
     );
     
     wire        CLKB = ~CLK;
@@ -40,7 +40,7 @@ module Serdes_1x14_DDR(
     // Xilinx HDL Libraries Guide, version 14.7
     ISERDESE2 #(
         .DATA_RATE         ("DDR"), // DDR, SDR
-        .DATA_WIDTH        (14), // Parallel data width (2-8,10,14)
+        .DATA_WIDTH        (10), // Parallel data width (2-8,10,14)
         .DYN_CLKDIV_INV_EN ("FALSE"), // Enable DYNCLKDIVINVSEL inversion (FALSE, TRUE)
         .DYN_CLK_INV_EN    ("FALSE"), // Enable DYNCLKINVSEL inversion (FALSE, TRUE)
         // INIT_Q1 - INIT_Q4: Initial value on the Q outputs (0/1)
@@ -107,7 +107,7 @@ module Serdes_1x14_DDR(
     // Xilinx HDL Libraries Guide, version 14.7
     ISERDESE2 #(
         .DATA_RATE         ("DDR"), // DDR, SDR
-        .DATA_WIDTH        (14), // Parallel data width (2-8,10,14)
+        .DATA_WIDTH        (10), // Parallel data width (2-8,10,14)
         .DYN_CLKDIV_INV_EN ("FALSE"), // Enable DYNCLKDIVINVSEL inversion (FALSE, TRUE)
         .DYN_CLK_INV_EN    ("FALSE"), // Enable DYNCLKINVSEL inversion (FALSE, TRUE)
         // INIT_Q1 - INIT_Q4: Initial value on the Q outputs (0/1)
@@ -133,10 +133,10 @@ module Serdes_1x14_DDR(
         .Q2           (     ),
         .Q3           (Q[8] ),
         .Q4           (Q[9] ),
-        .Q5           (Q[10]),
-        .Q6           (Q[11]),
-        .Q7           (Q[12]),
-        .Q8           (Q[13]),
+        .Q5           (     ),
+        .Q6           (     ),
+        .Q7           (     ),
+        .Q8           (     ),
         // SHIFTOUT1, SHIFTOUT2: 1-bit (each) output: Data width expansion output ports
         .SHIFTOUT1    (     ),
         .SHIFTOUT2    (     ),
