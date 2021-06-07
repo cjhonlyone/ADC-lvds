@@ -24,14 +24,16 @@ module AdcLane #(
     parameter AdcBits = 14
 )
 (
-    input DatLine      ,
-    input DatClk       ,
-    input DatClkDiv    ,
-    input DatRst       ,
-    input DatBitslip   ,
-    input FrmAlignDone ,
-    output [15:0] DatData     ,
-    output DatAlignDone
+    input           DatLine_p   ,
+    input           DatLine_n   ,
+    input           DatClk      ,
+    input           DatClkb     ,
+    input           DatClkDiv   ,
+    input           DatRst      ,
+    input           DatBitslip  ,
+    input           FrmAlignDone,
+    output  [15:0]  DatData     ,
+    output          DatAlignDone
     );
     
     generate 
@@ -42,13 +44,14 @@ module AdcLane #(
             reg [13:0] ADCData;
             Serdes_1x14_DDR inst_Serdes_1x14_DDR_Data_Line
              (
-                 .CLK     (DatClk),
-                 .CLKDIV  (DatClkDiv),
-                 .BITSLIP (DatBitslip),
-                 .D       (DatLine),
-                 .DDLY    (DatLine),
-                 .RST     (DatRst),
-                 .Q       (ADCDataLine)
+                 .CLK     (DatClk      ),
+                 .CLKB    (DatClkb     ),
+                 .CLKDIV  (DatClkDiv   ),
+                 .BITSLIP (DatBitslip  ),
+                 .D_p     (DatLine_p   ),
+                 .D_n     (DatLine_n   ),
+                 .RST     (DatRst      ),
+                 .Q       (ADCDataLine )
              );
              assign DatData = {{2{ADCData[13]}},ADCData};
              always @ (posedge DatClkDiv) begin
@@ -60,18 +63,18 @@ module AdcLane #(
             reg [11:0] ADCData;
             Serdes_1x12_DDR inst_Serdes_1x12_DDR_Data_Line
              (
-                 .CLKP    (DatClk),
-                 .CLKN    (~DatClk),
-                 .CLKDIV  (DatClkDiv),
-                 .BITSLIP (DatBitslip),
-                 .D       (DatLine),
-                 .DDLY    (DatLine),
-                 .RST     (DatRst),
-                 .Q       (ADCDataLine)
+                 .CLK     (DatClk      ),
+                 .CLKB    (DatClkb     ),
+                 .CLKDIV  (DatClkDiv   ),
+                 .BITSLIP (DatBitslip  ),
+                 .D_p     (DatLine_p   ),
+                 .D_n     (DatLine_n   ),
+                 .RST     (DatRst      ),
+                 .Q       (ADCDataLine )
              );
              assign DatData = {{4{ADCData[11]}},ADCData};
              always @ (posedge DatClkDiv) begin
-                ADCData <= ADCDataLine;
+                ADCData <= ADCDataLine;// {ADCDataLine[11],~ADCDataLine[10],ADCDataLine[9],~ADCDataLine[8],ADCDataLine[7],~ADCDataLine[6],ADCDataLine[5],~ADCDataLine[4],ADCDataLine[3],~ADCDataLine[2],ADCDataLine[1],~ADCDataLine[0]};
              end
         end else if (AdcBits == 10) begin
 
@@ -79,13 +82,14 @@ module AdcLane #(
             reg [9:0] ADCData;
             Serdes_1x10_DDR inst_Serdes_1x10_DDR_Data_Line
              (
-                 .CLK     (DatClk),
-                 .CLKDIV  (DatClkDiv),
-                 .BITSLIP (DatBitslip),
-                 .D       (DatLine),
-                 .DDLY    (DatLine),
-                 .RST     (DatRst),
-                 .Q       (ADCDataLine)
+                 .CLK     (DatClk      ),
+                 .CLKB    (DatClkb     ),
+                 .CLKDIV  (DatClkDiv   ),
+                 .BITSLIP (DatBitslip  ),
+                 .D_p     (DatLine_p   ),
+                 .D_n     (DatLine_n   ),
+                 .RST     (DatRst      ),
+                 .Q       (ADCDataLine )
              );
              assign DatData = {{6{ADCData[9]}},ADCData};
              always @ (posedge DatClkDiv) begin
@@ -97,13 +101,14 @@ module AdcLane #(
             reg [7:0] ADCData;
             Serdes_1x8_DDR inst_Serdes_1x8_DDR_Data_Line
              (
-                 .CLK     (DatClk),
-                 .CLKDIV  (DatClkDiv),
-                 .BITSLIP (DatBitslip),
-                 .D       (DatLine),
-                 .DDLY    (DatLine),
-                 .RST     (DatRst),
-                 .Q       (ADCDataLine)
+                 .CLK     (DatClk      ),
+                 .CLKB    (DatClkb     ),
+                 .CLKDIV  (DatClkDiv   ),
+                 .BITSLIP (DatBitslip  ),
+                 .D_p     (DatLine_p   ),
+                 .D_n     (DatLine_n   ),
+                 .RST     (DatRst      ),
+                 .Q       (ADCDataLine )
              );
              assign DatData = {{8{ADCData[7]}},ADCData};
              always @ (posedge DatClkDiv) begin

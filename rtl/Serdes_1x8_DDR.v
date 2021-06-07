@@ -23,16 +23,18 @@
 module Serdes_1x8_DDR(
     
     input CLK,
+    input CLKB,
     input CLKDIV,
     input BITSLIP,
-    input D,
-    input DDLY,
+    input D_p,
+    input D_n,
     input RST,
     
     output [7:0] Q
     );
     
-    wire        CLKB = ~CLK;
+    // have not been tested
+    wire clkb = ~CLK;
     // ISERDESE2: Input SERial/DESerializer with Bitslip
     // 7 Series
     // Xilinx HDL Libraries Guide, version 14.7
@@ -82,7 +84,7 @@ module Serdes_1x8_DDR(
         .CLKDIVP      (0  ), // 1-bit input: TBD
         // Clocks: 1-bit (each) input: ISERDESE2 clock input ports
         .CLK          (CLK), // 1-bit input: High-speed clock
-        .CLKB         (CLKB), // 1-bit input: High-speed secondary clock
+        .CLKB         (clkb), // 1-bit input: High-speed secondary clock
         .CLKDIV       (CLKDIV), // 1-bit input: Divided clock
         .OCLK         (0  ), // 1-bit input: High speed output clock used when INTERFACE_TYPE="MEMORY"
         // Dynamic Clock Inversions: 1-bit (each) input: Dynamic clock inversion pins to switch clock polarity

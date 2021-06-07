@@ -31,13 +31,10 @@ module AdcSwap #(
     input [15:0] DataLine0,
     input [15:0] DataLine1,
     
-    output [15:0] AdcData0,
-    output [15:0] AdcData1
+    output reg [15:0] AdcData0,
+    output reg [15:0] AdcData1
     
 );
-
-    reg [15:0] AdcData0;
-    reg [15:0] AdcData1;
 
     wire [15:0] D0 = DataLine0;
     wire [15:0] D1 = DataLine1;
@@ -163,8 +160,8 @@ end else if (AdcBits == 12) begin
             // Data Bit     : 5,   4,   3,   2,   1,   0,
             // Channel 0    : D5,  D4,  D3,  D2,  D1,  D0,
             // Channel 1    : D11, D10, D9,  D8,  D7,  D6,  
-            assign AdcData0x14 = {D1[5+6:0+6], D0[5+6:0+6]};
-            assign AdcData1x14 = {D1[5:0], D0[5:0]};
+            assign AdcData0x12 = {D1[5+6:0+6], D0[5+6:0+6]};
+            assign AdcData1x12 = {D1[5:0], D0[5:0]};
             end
         end else if (AdcMsbOrLsbFst == 0) begin
 
@@ -174,16 +171,16 @@ end else if (AdcBits == 12) begin
             // Data Bit     ; 5,  4,  3,  2,   1,   0
             // Channel 0    : D0, D2, D4, D6, D8, D10,
             // Channel 1    : D1, D3, D5, D7, D9, D11,
-            assign AdcData0x14 = {D1[0+6], D0[0+6], D1[1+6], D0[1+6], D1[2+6], D0[2+6], D1[3+6], D0[3+6], D1[4+6], D0[4+6], D1[5+6], D0[5+6]};
-            assign AdcData1x14 = {D1[0], D0[0], D1[1], D0[1], D1[2], D0[2], D1[3], D0[3], D1[4], D0[4], D1[5], D0[5]};
+            assign AdcData0x12 = {D1[0+6], D0[0+6], D1[1+6], D0[1+6], D1[2+6], D0[2+6], D1[3+6], D0[3+6], D1[4+6], D0[4+6], D1[5+6], D0[5+6]};
+            assign AdcData1x12 = {D1[0], D0[0], D1[1], D0[1], D1[2], D0[2], D1[3], D0[3], D1[4], D0[4], D1[5], D0[5]};
             end else if (AdcBitOrByteMode == 0) begin
             // Byte Mode
             // Byte Mode, LSB First, 12-bits
             // Data Bit     : 5,   4,   3,   2,   1,   0
             // Channel 0    : D0, D1, D2,  D3,  D4,  D5,
             // Channel 1    : D6, D7, D8,  D9,  D10, D11,
-            assign AdcData0x14 = {D1[0+6], D1[1+6], D1[2+6], D1[3+6], D1[4+6], D1[5+6], D0[0+6], D0[1+6], D0[2+6], D0[3+6], D0[4+6], D0[5+6]};
-            assign AdcData1x14 = {D1[0], D1[1], D1[2], D1[3], D1[4], D1[5], D0[0], D0[1], D0[2], D0[3], D0[4], D0[5]};
+            assign AdcData0x12 = {D1[0+6], D1[1+6], D1[2+6], D1[3+6], D1[4+6], D1[5+6], D0[0+6], D0[1+6], D0[2+6], D0[3+6], D0[4+6], D0[5+6]};
+            assign AdcData1x12 = {D1[0], D1[1], D1[2], D1[3], D1[4], D1[5], D0[0], D0[1], D0[2], D0[3], D0[4], D0[5]};
             end
         end
     end
@@ -275,16 +272,16 @@ end else if (AdcBits == 8) begin
         if (AdcMsbOrLsbFst == 1) begin
             
             // if (AdcBitOrByteMode == 1) begin
-                assign AdcData0x10 = D0[7:0];
-                assign AdcData1x10 = D1[7:0];
+                assign AdcData0x8 = D0[7:0];
+                assign AdcData1x8 = D1[7:0];
             // end else if (AdcBitOrByteMode == 0) begin
 
             // end
         end else if (AdcMsbOrLsbFst == 0) begin
 
             // if (AdcBitOrByteMode == 1) begin
-                assign AdcData0x10 = {D0[0], D0[1], D0[2], D0[3], D0[4], D0[5], D0[6], D0[7]};
-                assign AdcData1x10 = {D1[0], D1[1], D1[2], D1[3], D1[4], D1[5], D1[6], D1[7]};
+                assign AdcData0x8 = {D0[0], D0[1], D0[2], D0[3], D0[4], D0[5], D0[6], D0[7]};
+                assign AdcData1x8 = {D1[0], D1[1], D1[2], D1[3], D1[4], D1[5], D1[6], D1[7]};
             // end else if (AdcBitOrByteMode == 0) begin
                 
             // end
@@ -299,16 +296,16 @@ end else if (AdcBits == 8) begin
             // Bit          : 3,  2,  1,  0
             // Channel 0    : D6, D4, D2, D0
             // Channel 1    : D7, D5, D3, D1
-            assign AdcData0x10 = {D1[3+4], D0[3+4], D1[2+4], D0[2+4], D1[1+4], D0[1+4], D1[0+4], D0[0+4]};
-            assign AdcData1x10 = {D1[3], D0[3], D1[2], D0[2], D1[1], D0[1], D1[0], D0[0]};
+            assign AdcData0x8 = {D1[3+4], D0[3+4], D1[2+4], D0[2+4], D1[1+4], D0[1+4], D1[0+4], D0[0+4]};
+            assign AdcData1x8 = {D1[3], D0[3], D1[2], D0[2], D1[1], D0[1], D1[0], D0[0]};
             end else if (AdcBitOrByteMode == 0) begin
             // Byte Mode
             // Byte Mode, MSB First, 8-bits
             // Data Bit     : 3,   2,   1,   0,
             // Channel 0    : D3,  D2,  D1,  D0,
             // Channel 1    : D7,  D6,  D5,  D4,  
-            assign AdcData0x10 = {D1[3+4:0+4], D0[3+4:0+4]};
-            assign AdcData1x10 = {D1[3:0], D0[3:0]};
+            assign AdcData0x8 = {D1[3+4:0+4], D0[3+4:0+4]};
+            assign AdcData1x8 = {D1[3:0], D0[3:0]};
             end
         end else if (AdcMsbOrLsbFst == 0) begin
 
@@ -318,16 +315,16 @@ end else if (AdcBits == 8) begin
             // Data Bit     ; 3,  2,   1,   0
             // Channel 0    : D0, D2, D4, D6,
             // Channel 1    : D1, D3, D5, D7,
-            assign AdcData0x10 = {D1[0+4], D0[0+4], D1[1+4], D0[1+4], D1[2+4], D0[2+4], D1[3+4], D0[3+4]};
-            assign AdcData1x10 = {D1[0], D0[0], D1[1], D0[1], D1[2], D0[2], D1[3], D0[3]};
+            assign AdcData0x8 = {D1[0+4], D0[0+4], D1[1+4], D0[1+4], D1[2+4], D0[2+4], D1[3+4], D0[3+4]};
+            assign AdcData1x8 = {D1[0], D0[0], D1[1], D0[1], D1[2], D0[2], D1[3], D0[3]};
             end else if (AdcBitOrByteMode == 0) begin
             // Byte Mode
             // Byte Mode, LSB First, 8-bits
             // Data Bit     : 3,  2,  1,   0
             // Channel 0    : D0, D1, D2,  D3,
             // Channel 1    : D4, D5, D6,  D7,
-            assign AdcData0x10 = {D1[0+4], D1[1+4], D1[2+4], D1[3+4], D0[0+4], D0[1+4], D0[2+4], D0[3+4]};
-            assign AdcData1x10 = {D1[0], D1[1], D1[2], D1[3], D0[0], D0[1], D0[2], D0[3]};
+            assign AdcData0x8 = {D1[0+4], D1[1+4], D1[2+4], D1[3+4], D0[0+4], D0[1+4], D0[2+4], D0[3+4]};
+            assign AdcData1x8 = {D1[0], D1[1], D1[2], D1[3], D0[0], D0[1], D0[2], D0[3]};
             end
         end
     end

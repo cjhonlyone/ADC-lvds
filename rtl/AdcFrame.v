@@ -25,8 +25,10 @@ module AdcFrame#(
     parameter FrmPattern = 16'b0011111110000000
 )
 (
-    input FrmFCLK,
+    input FrmFCLK_p,
+    input FrmFCLK_n,
     input FrmClk,
+    input FrmClkb,
     input FrmClkDiv,
     input FrmRst,
     input BitClkDone,
@@ -37,7 +39,7 @@ module AdcFrame#(
     wire [15:0] wFrmPattern;
     
     reg rFrmBitslip;
-    reg [2:0] rBitslipCnt;
+    reg [7:0] rBitslipCnt;
     reg rFrmAlignDone;
    
     generate 
@@ -46,22 +48,23 @@ module AdcFrame#(
             Serdes_1x14_DDR inst_Serdes_1x14_DDR_Data_Line
              (
                  .CLK     (FrmClk),
+                 .CLKB    (FrmClkb),
                  .CLKDIV  (FrmClkDiv),
                  .BITSLIP (rFrmBitslip),
-                 .D       (FrmFCLK),
-                 .DDLY    (FrmFCLK),
+                 .D_p     (FrmFCLK_p),
+                 .D_n     (FrmFCLK_n),
                  .RST     (FrmRst),
                  .Q       (wFrmPattern[AdcBits-1:0])
              );
         end else if (AdcBits == 12) begin
             Serdes_1x12_DDR inst_Serdes_1x12_DDR_Data_Line
              (
-                 .CLKP    (FrmClk),
-                 .CLKN    (~FrmClk),
+                 .CLK     (FrmClk),
+                 .CLKB    (FrmClkb),
                  .CLKDIV  (FrmClkDiv),
                  .BITSLIP (rFrmBitslip),
-                 .D       (FrmFCLK),
-                 .DDLY    (FrmFCLK),
+                 .D_p     (FrmFCLK_p),
+                 .D_n     (FrmFCLK_n),
                  .RST     (FrmRst),
                  .Q       (wFrmPattern[AdcBits-1:0])
              );
@@ -69,10 +72,11 @@ module AdcFrame#(
             Serdes_1x10_DDR inst_Serdes_1x10_DDR_Data_Line
              (
                  .CLK     (FrmClk),
+                 .CLKB    (FrmClkb),
                  .CLKDIV  (FrmClkDiv),
                  .BITSLIP (rFrmBitslip),
-                 .D       (FrmFCLK),
-                 .DDLY    (FrmFCLK),
+                 .D_p     (FrmFCLK_p),
+                 .D_n     (FrmFCLK_n),
                  .RST     (FrmRst),
                  .Q       (wFrmPattern[AdcBits-1:0])
              );
@@ -80,10 +84,11 @@ module AdcFrame#(
             Serdes_1x8_DDR inst_Serdes_1x8_DDR_Data_Line
              (
                  .CLK     (FrmClk),
+                 .CLKB    (FrmClkb),
                  .CLKDIV  (FrmClkDiv),
                  .BITSLIP (rFrmBitslip),
-                 .D       (FrmFCLK),
-                 .DDLY    (FrmFCLK),
+                 .D_p     (FrmFCLK_p),
+                 .D_n     (FrmFCLK_n),
                  .RST     (FrmRst),
                  .Q       (wFrmPattern[AdcBits-1:0])
              );
@@ -97,7 +102,7 @@ module AdcFrame#(
             rBitslipCnt <= 0;
             rFrmAlignDone <= 0;
         end else begin
-            if (rBitslipCnt == 4) begin
+            if (rBitslipCnt == 31) begin
                 rBitslipCnt <= 0;
                 rFrmBitslip <= 0;
                 rFrmAlignDone <= rFrmAlignDone;
@@ -121,4 +126,11 @@ module AdcFrame#(
     assign FrmBitslip = rFrmBitslip;
     assign FrmAlignDone = rFrmAlignDone;
     
+//    // Debug
+//    ila_1 ila_frame
+//    (
+//        .clk(FrmClkDiv),
+//        .probe0(wFrmPattern),
+//        .probe1(rFrmBitslip)
+//     );
 endmodule

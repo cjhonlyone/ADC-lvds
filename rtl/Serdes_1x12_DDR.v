@@ -22,19 +22,18 @@
 
 module Serdes_1x12_DDR(
     
-    input CLKP,
-    input CLKN,
+    input CLK,
+    input CLKB,
     input CLKDIV,
     input BITSLIP,
-    input D,
-    input DDLY,
+    input D_p,
+    input D_n,
     input RST,
     
     output [11:0] Q
     );
-    
-    wire        CLKBP = ~CLKP;
-    wire        CLKBN = ~CLKN;
+    // have been tested on AD9252
+
     // ISERDESE2: Input SERial/DESerializer with Bitslip
     // 7 Series
     // Xilinx HDL Libraries Guide, version 14.7
@@ -57,7 +56,11 @@ module Serdes_1x12_DDR(
         .SRVAL_Q1          (1'b0),
         .SRVAL_Q2          (1'b0),
         .SRVAL_Q3          (1'b0),
-        .SRVAL_Q4          (1'b0)
+        .SRVAL_Q4          (1'b0),
+                
+        .IS_CLK_INVERTED   (1'b0),
+        .IS_CLKB_INVERTED  (1'b0),
+        .IS_D_INVERTED     (1'b0)
     )
     ISERDESE2_inst_master (
         .O            (    ), // 1-bit output: Combinatorial output
@@ -68,8 +71,8 @@ module Serdes_1x12_DDR(
         .Q4           (Q[6]),
         .Q5           (Q[8]),
         .Q6           (Q[10]),
-        .Q7           (    ),
-        .Q8           (    ),
+        .Q7           (),
+        .Q8           (),
         // SHIFTOUT1, SHIFTOUT2: 1-bit (each) output: Data width expansion output ports
         .SHIFTOUT1    (),
         .SHIFTOUT2    (),
@@ -83,16 +86,16 @@ module Serdes_1x12_DDR(
         .CE2          (1'b1),
         .CLKDIVP      (0  ), // 1-bit input: TBD
         // Clocks: 1-bit (each) input: ISERDESE2 clock input ports
-        .CLK          (CLKP), // 1-bit input: High-speed clock
-        .CLKB         (CLKBP), // 1-bit input: High-speed secondary clock
+        .CLK          (CLK), // 1-bit input: High-speed clock
+        .CLKB         (CLKB), // 1-bit input: High-speed secondary clock
         .CLKDIV       (CLKDIV), // 1-bit input: Divided clock
         .OCLK         (0  ), // 1-bit input: High speed output clock used when INTERFACE_TYPE="MEMORY"
         // Dynamic Clock Inversions: 1-bit (each) input: Dynamic clock inversion pins to switch clock polarity
         .DYNCLKDIVSEL (0  ), // 1-bit input: Dynamic CLKDIV inversion
         .DYNCLKSEL    (0  ), // 1-bit input: Dynamic CLK/CLKB inversion
         // Input Data: 1-bit (each) input: ISERDESE2 data input ports
-        .D            (D), // 1-bit input: Data input
-        .DDLY         (DDLY), // 1-bit input: Serial data from IDELAYE2
+        .D            (D_p), // 1-bit input: Data input
+        .DDLY         (0), // 1-bit input: Serial data from IDELAYE2
         .OFB          (0  ), // 1-bit input: Data feedback from OSERDESE2
         .OCLKB        (0  ), // 1-bit input: High speed negative edge output clock
         .RST          (RST), // 1-bit input: Active high asynchronous reset
@@ -124,7 +127,11 @@ module Serdes_1x12_DDR(
         .SRVAL_Q1          (1'b0),
         .SRVAL_Q2          (1'b0),
         .SRVAL_Q3          (1'b0),
-        .SRVAL_Q4          (1'b0)
+        .SRVAL_Q4          (1'b0),
+        
+        .IS_CLK_INVERTED   (1'b0),
+        .IS_CLKB_INVERTED  (1'b0),
+        .IS_D_INVERTED     (1'b1)
     )
     ISERDESE2_inst_slave (
         .O            (     ), // 1-bit output: Combinatorial output
@@ -133,10 +140,10 @@ module Serdes_1x12_DDR(
         .Q2           (Q[3] ),
         .Q3           (Q[5] ),
         .Q4           (Q[7] ),
-        .Q5           (Q[9]),
+        .Q5           (Q[9] ),
         .Q6           (Q[11]),
-        .Q7           (     ),
-        .Q8           (     ),
+        .Q7           (),
+        .Q8           (),
         // SHIFTOUT1, SHIFTOUT2: 1-bit (each) output: Data width expansion output ports
         .SHIFTOUT1    (     ),
         .SHIFTOUT2    (     ),
@@ -150,16 +157,16 @@ module Serdes_1x12_DDR(
         .CE2          (1'b1),
         .CLKDIVP      (0  ), // 1-bit input: TBD
         // Clocks: 1-bit (each) input: ISERDESE2 clock input ports
-        .CLK          (CLKN), // 1-bit input: High-speed clock
-        .CLKB         (CLKBN), // 1-bit input: High-speed secondary clock
+        .CLK          (CLKB), // 1-bit input: High-speed clock
+        .CLKB         (CLK), // 1-bit input: High-speed secondary clock
         .CLKDIV       (CLKDIV), // 1-bit input: Divided clock
         .OCLK         (0  ), // 1-bit input: High speed output clock used when INTERFACE_TYPE="MEMORY"
         // Dynamic Clock Inversions: 1-bit (each) input: Dynamic clock inversion pins to switch clock polarity
         .DYNCLKDIVSEL (0  ), // 1-bit input: Dynamic CLKDIV inversion
         .DYNCLKSEL    (0  ), // 1-bit input: Dynamic CLK/CLKB inversion
         // Input Data: 1-bit (each) input: ISERDESE2 data input ports
-        .D            (D), // 1-bit input: Data input
-        .DDLY         (DDLY), // 1-bit input: Serial data from IDELAYE2
+        .D            (D_n), // 1-bit input: Data input
+        .DDLY         (0), // 1-bit input: Serial data from IDELAYE2
         .OFB          (0  ), // 1-bit input: Data feedback from OSERDESE2
         .OCLKB        (0  ), // 1-bit input: High speed negative edge output clock
         .RST          (RST), // 1-bit input: Active high asynchronous reset
@@ -167,4 +174,5 @@ module Serdes_1x12_DDR(
         .SHIFTIN1     (0),
         .SHIFTIN2     (0)
     );
+
 endmodule
