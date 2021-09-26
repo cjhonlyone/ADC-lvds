@@ -26,7 +26,8 @@ module AdcLVDS #(
     parameter AdcBitOrByteMode = 1, // 1 = BIT mode, 0 = BYTE mode
     parameter AdcMsbOrLsbFst = 1, // 1 = MSB first, 0 = LSB first
     parameter AdcWireMode = 1, // 1 = 1-wire, 2 = 2-wire
-    parameter AdcFrmPattern = 16'b0000111111000000
+    parameter AdcFrmPattern = 16'b0000111111000000,
+    parameter AdcSampFreDiv2 = 0
 )
 (
     input DCLK_p_pin,
@@ -37,6 +38,8 @@ module AdcLVDS #(
     input [(AdcChnls*AdcWireMode)-1 : 0] DATA_n_pin,
     
     input SysRst,
+    
+    input  AdcSampClk,
     
     output AdcFrmClk, 
     output [7:0] AdcDataValid,
@@ -170,8 +173,8 @@ module AdcLVDS #(
         AdcSwap #(
                 .AdcBits(AdcBits),
                 .AdcBitOrByteMode(AdcBitOrByteMode),
-                .AdcMsbOrLsbFst(AdcBitOrByteMode),
-                .AdcWireMode(AdcMsbOrLsbFst)
+                .AdcMsbOrLsbFst(AdcMsbOrLsbFst),
+                .AdcWireMode(AdcWireMode)
             ) inst_AdcSwap (
                 .FrmClk    (IntClkDiv),
                 .DataLine0 (DatData[(i+1)*16-1:i*16]),
@@ -182,39 +185,112 @@ module AdcLVDS #(
         end
     endgenerate
 
+generate
+
+if (AdcSampFreDiv2 == 0) begin
     assign AdcFrmClk = IntClkDiv;
     assign AdcDataValid = IntDatAlignDone;
-
-    generate 
-        if (AdcChnls == 1) begin
-            assign AdcDataCh0 = AdcData[15:0];
-        end else if (AdcChnls == 2) begin
-            assign AdcDataCh0 = AdcData[15:0];
-            assign AdcDataCh1 = AdcData[31:16];
-        end else if (AdcChnls == 4) begin
-            assign AdcDataCh0 = AdcData[15:0];
-            assign AdcDataCh1 = AdcData[31:16];
-            assign AdcDataCh2 = AdcData[47:32];
-            assign AdcDataCh3 = AdcData[63:48];
-        end else if (AdcChnls == 6) begin
-            assign AdcDataCh0 = AdcData[15:0];
-            assign AdcDataCh1 = AdcData[31:16];
-            assign AdcDataCh2 = AdcData[47:32];
-            assign AdcDataCh3 = AdcData[63:48];
-            assign AdcDataCh4 = AdcData[79:64];
-            assign AdcDataCh5 = AdcData[95:80];
-        end else if (AdcChnls == 8) begin
-            assign AdcDataCh0 = AdcData[15:0];
-            assign AdcDataCh1 = AdcData[31:16];
-            assign AdcDataCh2 = AdcData[47:32];
-            assign AdcDataCh3 = AdcData[63:48];
-            assign AdcDataCh4 = AdcData[79:64];
-            assign AdcDataCh5 = AdcData[95:80];
-            assign AdcDataCh6 = AdcData[111:96];
-            assign AdcDataCh7 = AdcData[127:112];
-        end
-    endgenerate    
     
+    if (AdcChnls == 1) begin
+        assign AdcDataCh0 = AdcData[15:0];
+    end else if (AdcChnls == 2) begin
+        assign AdcDataCh0 = AdcData[15:0];
+        assign AdcDataCh1 = AdcData[31:16];
+    end else if (AdcChnls == 4) begin
+        assign AdcDataCh0 = AdcData[15:0];
+        assign AdcDataCh1 = AdcData[31:16];
+        assign AdcDataCh2 = AdcData[47:32];
+        assign AdcDataCh3 = AdcData[63:48];
+    end else if (AdcChnls == 6) begin
+        assign AdcDataCh0 = AdcData[15:0];
+        assign AdcDataCh1 = AdcData[31:16];
+        assign AdcDataCh2 = AdcData[47:32];
+        assign AdcDataCh3 = AdcData[63:48];
+        assign AdcDataCh4 = AdcData[79:64];
+        assign AdcDataCh5 = AdcData[95:80];
+    end else if (AdcChnls == 8) begin
+        assign AdcDataCh0 = AdcData[15:0];
+        assign AdcDataCh1 = AdcData[31:16];
+        assign AdcDataCh2 = AdcData[47:32];
+        assign AdcDataCh3 = AdcData[63:48];
+        assign AdcDataCh4 = AdcData[79:64];
+        assign AdcDataCh5 = AdcData[95:80];
+        assign AdcDataCh6 = AdcData[111:96];
+        assign AdcDataCh7 = AdcData[127:112];
+    end
+    
+end else begin
+    // 2x Sample => 1 Channel
+    // AdcFrmClk => 2xAdcFrmClk = AdcSampClk
+    wire [8*AdcChnls*AdcWireMode-1:0] AdcDataSampThis;
+    wire [8*AdcChnls*AdcWireMode-1:0] AdcDataSampNext;
+
+    for (i = 0; i<AdcChnls;i=i+1) begin
+        assign AdcDataSampThis[(i+1)*16-1:i*16] = AdcData[i*32+16-1:i*32];
+        assign AdcDataSampNext[(i+1)*16-1:i*16] = AdcData[i*32+16-1+16:i*32+16];
+    end
+
+    wire [16*AdcChnls*AdcWireMode-1:0] AdcDataSamp;
+
+    wire s_axis_tready;
+    wire m_axis_tvalid;
+    wire [AdcChnls*2-1:0] m_axis_tkeep;
+    // 2x 50MHz to 1x 100MHz
+    axis_async_fifo_adapter #(
+        .DEPTH(512),
+        .S_DATA_WIDTH(16*AdcChnls*2),
+        .M_DATA_WIDTH(16*AdcChnls),
+        .ID_ENABLE(0),
+        .ID_WIDTH(8),
+        .DEST_ENABLE(0),
+        .DEST_WIDTH(8),
+        .USER_ENABLE(0),
+        .USER_WIDTH(8),
+        .FRAME_FIFO(0),
+        .USER_BAD_FRAME_VALUE(1'b1),
+        .USER_BAD_FRAME_MASK(1'b1),
+        .DROP_BAD_FRAME(0),
+        .DROP_WHEN_FULL(0)
+    )
+    Inst_async_fifo (
+        // AXI input
+        .s_clk(IntClkDiv),
+        .s_rst(IntRst),
+        .s_axis_tdata ({AdcDataSampNext,AdcDataSampThis}),
+        .s_axis_tkeep ({AdcChnls*8{1'b1}}),
+        .s_axis_tvalid(IntDatAlignDone[0]),
+        .s_axis_tready(s_axis_tready),
+        .s_axis_tlast (0),
+        // AXI output
+        .m_clk(AdcSampClk),
+        .m_rst(1'b0),
+        .m_axis_tdata (AdcDataSamp),
+        .m_axis_tkeep (m_axis_tkeep),
+        .m_axis_tvalid(m_axis_tvalid),
+        .m_axis_tready(1'b1),
+        .m_axis_tlast ()
+    );
+
+    assign AdcFrmClk = AdcSampClk;
+    assign AdcDataValid = IntDatAlignDone;
+    
+    if (AdcChnls == 1) begin
+        assign AdcDataCh0 = AdcDataSamp[15:0];
+    end else if (AdcChnls == 2) begin
+        assign AdcDataCh0 = AdcDataSamp[15:0];
+        assign AdcDataCh1 = AdcDataSamp[31:16];
+    end else if (AdcChnls == 4) begin
+        assign AdcDataCh0 = AdcDataSamp[15:0];
+        assign AdcDataCh1 = AdcDataSamp[31:16];
+        assign AdcDataCh2 = AdcDataSamp[47:32];
+        assign AdcDataCh3 = AdcDataSamp[63:48];
+    end
+    
+end
+
+endgenerate
+
+
 endmodule
 
 module MMCM_350M 
