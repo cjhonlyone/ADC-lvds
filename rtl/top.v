@@ -19,48 +19,24 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 module top # (
-    parameter C_AdcChnls = 4,     // Number of ADC in a package
-    parameter C_AdcWireInt = 2,  // 2 = 2-wire, 1 = 1-wire interface
-    parameter C_AdcBits = 12,
-    parameter C_AdcBytOrBitMode = 0, // 1 = BIT mode, 0 = BYTE mode,
-    parameter C_AdcMsbOrLsbFst = 1 // 0 = MSB first, 1 = LSB first
+    parameter AdcChnls = 2, 
+    parameter AdcWireMode = 1, 
+    parameter AdcBits = 14,
+    parameter AdcBitOrByteMode = 1, 
+    parameter AdcMsbOrLsbFst = 1 
 )
 (
     input DCLK_p_pin,
     input DCLK_n_pin,
     input FCLK_p_pin,
     input FCLK_n_pin,
-    input [(C_AdcChnls*C_AdcWireInt)-1 : 0] DATA_p_pin,
-    input [(C_AdcChnls*C_AdcWireInt)-1 : 0] DATA_n_pin,
+    input [(AdcChnls*AdcWireMode)-1 : 0] DATA_p_pin,
+    input [(AdcChnls*AdcWireMode)-1 : 0] DATA_n_pin,
 
     input SysClk_p_pin,
     input SysClk_n_pin,
     input SysRst,
-    
-    
-    
-    inout [14:0]DDR_0_addr,
-    inout [2:0]DDR_0_ba,
-    inout DDR_0_cas_n,
-    inout DDR_0_ck_n,
-    inout DDR_0_ck_p,
-    inout DDR_0_cke,
-    inout DDR_0_cs_n,
-    inout [3:0]DDR_0_dm,
-    inout [31:0]DDR_0_dq,
-    inout [3:0]DDR_0_dqs_n,
-    inout [3:0]DDR_0_dqs_p,
-    inout DDR_0_odt,
-    inout DDR_0_ras_n,
-    inout DDR_0_reset_n,
-    inout DDR_0_we_n,
-    inout FIXED_IO_0_ddr_vrn,
-    inout FIXED_IO_0_ddr_vrp,
-    inout [53:0]FIXED_IO_0_mio,
-    inout FIXED_IO_0_ps_clk,
-    inout FIXED_IO_0_ps_porb,
-    inout FIXED_IO_0_ps_srstb,
-    
+
     output                  adc_pdn,
     output                  adc_reset,
     // ADC is Slave
@@ -118,32 +94,80 @@ module top # (
             .locked    ( )
        );
     
+    // LTC
+    AdcLVDS #(
+        .AdcChnls(2),
+        .AdcBits(14),
+        .AdcBitOrByteMode(1),
+        .AdcMsbOrLsbFst(1),
+        .AdcWireMode(1),
+        .AdcFrmPattern(16'b0011111110000000),
+        .AdcSampFreDiv2(0),
+        .AdcDCLKFrequency(182),
+        .AdcFCLKFrequency(26),
+        .CLKFBOUT_MULT_F(5),
+        .CLKOUT1_DIVIDE(182/26)
+    ) inst_AdcLVDS (
+        .DCLK_p_pin   (DCLK_p_pin),
+        .DCLK_n_pin   (DCLK_n_pin),
+        .FCLK_p_pin   (FCLK_p_pin),
+        .FCLK_n_pin   (FCLK_n_pin),
+        .DATA_p_pin   (DATA_p_pin),
+        .DATA_n_pin   (DATA_n_pin),
+        .SysRst       (0),
+        .AdcSampClk   (AdcSampClk),
+        .AdcFrmClk    (AdcFrmClk),
+        .AdcDataValid (AdcDataValid),
+        .AdcDataCh0   (AdcDataCh0),
+        .AdcDataCh1   (AdcDataCh1),
+        .AdcDataCh2   (AdcDataCh2),
+        .AdcDataCh3   (AdcDataCh3)
+    );
+    
+
+   // spi_auto_config inst_spi_auto_config
+   //     (
+   //         .clk            (s_axi_aclk),
+   //         .resetn         (s_axi_aresetn),
+   //         .ocfg_cur_state (ocfg_cur_state),
+   //         .spi_miso_i     (spi_miso_i),
+   //         .spi_clk_o      (spi_clk),
+   //         .spi_mosi_o     (spi_mosi_o),
+   //         .spi_cs_o       (spi_cs_o),
+   //         .spi_tri_o      (spi_tri_o),
+   //         .cfg_finish_o   (axil_auto_config_resetn),
+   //         .ram_inputs_o   (ram_inputs_i),
+   //         .ram_outputs_i  (ram_outputs_o),
+   //         .ram_addr_i     (ram_addr_o),
+   //         .ram_wea_i      (ram_wea_o)
+   //     );
+
 
     // AD3444
-	AdcLVDS #(
-            .AdcChnls(4),
-            .AdcBits(14),
-            .AdcBitOrByteMode(0),
-            .AdcMsbOrLsbFst(0),
-            .AdcWireMode(2),
-            .AdcFrmPattern(16'b0011111110000000),
-            .AdcSampFreDiv2(1)
-            ) inst_AdcLVDS (
-			.DCLK_p_pin   (DCLK_p_pin),
-			.DCLK_n_pin   (DCLK_n_pin),
-			.FCLK_p_pin   (FCLK_p_pin),
-			.FCLK_n_pin   (FCLK_n_pin),
-			.DATA_p_pin   (DATA_p_pin),
-			.DATA_n_pin   (DATA_n_pin),
-			.SysRst       (0),
-			.AdcSampClk   (AdcSampClk),
-			.AdcFrmClk    (AdcFrmClk),
-			.AdcDataValid (AdcDataValid),
-			.AdcDataCh0   (AdcDataCh0),
-			.AdcDataCh1   (AdcDataCh1),
-			.AdcDataCh2   (AdcDataCh2),
-			.AdcDataCh3   (AdcDataCh3)
-		);
+    // AdcLVDS #(
+    //         .AdcChnls(4),
+    //         .AdcBits(14),
+    //         .AdcBitOrByteMode(0),
+    //         .AdcMsbOrLsbFst(0),
+    //         .AdcWireMode(2),
+    //         .AdcFrmPattern(16'b0011111110000000),
+    //         .AdcSampFreDiv2(1)
+    //     ) inst_AdcLVDS (
+    //     .DCLK_p_pin   (DCLK_p_pin),
+    //     .DCLK_n_pin   (DCLK_n_pin),
+    //     .FCLK_p_pin   (FCLK_p_pin),
+    //     .FCLK_n_pin   (FCLK_n_pin),
+    //     .DATA_p_pin   (DATA_p_pin),
+    //     .DATA_n_pin   (DATA_n_pin),
+    //     .SysRst       (0),
+    //     .AdcSampClk   (AdcSampClk),
+    //     .AdcFrmClk    (AdcFrmClk),
+    //     .AdcDataValid (AdcDataValid),
+    //     .AdcDataCh0   (AdcDataCh0),
+    //     .AdcDataCh1   (AdcDataCh1),
+    //     .AdcDataCh2   (AdcDataCh2),
+    //     .AdcDataCh3   (AdcDataCh3)
+    // );
 
 
 
@@ -154,7 +178,7 @@ module top # (
        #(.DRIVE("12"), .SLEW("FAST"))
    Inst_spidio_IOBUF
        (.O(spi_miso_i), .IO(spi_sdio), .I(spi_mosi_o), .T(spi_tri_o));
-	AdcLVDS #(
+    AdcLVDS #(
             .AdcChnls(8),
             .AdcBits(14),
             .AdcBitOrByteMode(1),
@@ -162,220 +186,29 @@ module top # (
             .AdcWireMode(1),
             .AdcFrmPattern(16'b0011111110000000),
             .AdcSampFreDiv2(0)
-            ) inst_AdcLVDS (
-			.DCLK_p_pin   (DCLK_p_pin),
-			.DCLK_n_pin   (DCLK_n_pin),
-			.FCLK_p_pin   (FCLK_p_pin),
-			.FCLK_n_pin   (FCLK_n_pin),
-			.DATA_p_pin   (DATA_p_pin),
-			.DATA_n_pin   (DATA_n_pin),
-			.SysRst       (0),
-			.AdcSampClk   (),
-			.AdcFrmClk    (AdcFrmClk),
-			.AdcDataValid (AdcDataValid),
-			.AdcDataCh0   (AdcDataCh0),
-			.AdcDataCh1   (AdcDataCh1),
-			.AdcDataCh2   (AdcDataCh2),
-			.AdcDataCh3   (AdcDataCh3),
-			.AdcDataCh4   (AdcDataCh4),
-			.AdcDataCh5   (AdcDataCh5),
-			.AdcDataCh6   (AdcDataCh6),
-			.AdcDataCh7   (AdcDataCh7)
-		);
+        ) inst_AdcLVDS (
+        .DCLK_p_pin   (DCLK_p_pin),
+        .DCLK_n_pin   (DCLK_n_pin),
+        .FCLK_p_pin   (FCLK_p_pin),
+        .FCLK_n_pin   (FCLK_n_pin),
+        .DATA_p_pin   (DATA_p_pin),
+        .DATA_n_pin   (DATA_n_pin),
+        .SysRst       (0),
+        .AdcSampClk   (),
+        .AdcFrmClk    (AdcFrmClk),
+        .AdcDataValid (AdcDataValid),
+        .AdcDataCh0   (AdcDataCh0),
+        .AdcDataCh1   (AdcDataCh1),
+        .AdcDataCh2   (AdcDataCh2),
+        .AdcDataCh3   (AdcDataCh3),
+        .AdcDataCh4   (AdcDataCh4),
+        .AdcDataCh5   (AdcDataCh5),
+        .AdcDataCh6   (AdcDataCh6),
+        .AdcDataCh7   (AdcDataCh7)
+    );
 
 */
-  
-    wire BRAM_PORTA_0_clk = AdcFrmClk;
-    wire BRAM_PORTA_1_clk = AdcFrmClk;
-    wire BRAM_PORTA_2_clk = AdcFrmClk;
-    wire BRAM_PORTA_3_clk = AdcFrmClk;
-    wire BRAM_PORTA_4_clk = AdcFrmClk;
-  
-    reg   [13:0]  BRAM_PORTA_0_addr;
-    reg   [0:0]   BRAM_PORTA_0_we   ;
-    reg   [127:0] BRAM_PORTA_0_din;
-    
-    wire  [13:0]  BRAM_PORTA_1_addr = BRAM_PORTA_0_addr;
-    wire  [0:0]   BRAM_PORTA_1_we   = BRAM_PORTA_0_we  ;
-    reg   [127:0] BRAM_PORTA_1_din                     ;
-    
-    wire  [13:0]  BRAM_PORTA_2_addr = BRAM_PORTA_0_addr;
-    wire  [0:0]   BRAM_PORTA_2_we   = BRAM_PORTA_0_we  ;
-    reg   [127:0] BRAM_PORTA_2_din                     ;
-    
-    wire  [13:0]  BRAM_PORTA_3_addr = BRAM_PORTA_0_addr;
-    wire  [0:0]   BRAM_PORTA_3_we   = BRAM_PORTA_0_we  ;
-    reg   [127:0] BRAM_PORTA_3_din                     ;
-    
-    wire  [13:0]  BRAM_PORTA_4_addr = BRAM_PORTA_0_addr;
-    wire  [0:0]   BRAM_PORTA_4_we   = BRAM_PORTA_0_we  ;
-    reg   [127:0] BRAM_PORTA_4_din                     ;
 
-
-    wire [8*16-1:0] AD_Data = {AdcDataCh7, AdcDataCh6, AdcDataCh5, AdcDataCh4, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-//    wire [8*16-1:0] AD_Data_2 = {8{{6{Cos_10_7[13]}},Cos_10_7[12:3]}};
-    ila_0 Inst_ila
-        (
-            .clk(AdcFrmClk),
-            .probe0(spi_miso_i),
-            .probe1(spi_mosi_o),
-            .probe2(spi_clk),
-            .probe3(spi_cs_o),
-            .probe4(AdcDataCh0),
-            .probe5(AdcDataCh1),
-            .probe6(AdcDataCh2),
-            .probe7(AdcDataCh3)
-        );
-  reg In0_0;
-  wire In1_0;
-  wire [31:0] gpio_io_o_0;
-  reg [1:0] gpio_posedge_0;
-  reg [1:0] gpio_posedge_1;
-  always @ (posedge AdcFrmClk) begin
-      gpio_posedge_0 <= {gpio_posedge_0[0], gpio_io_o_0[31]};
-      gpio_posedge_1 <= {gpio_posedge_1[0], gpio_io_o_0[30]};
-  end
-  
-//  always @ (posedge AdcFrmClk) begin
-//      if (gpio_posedge_1 == 2'b01) begin
-////          shift_trunc <= gpio_io_o_0[28:24];
-////          if (shift_trunc == 5'd23) begin
-////            shift_trunc <= 5'd0;
-////          end else begin
-////            shift_trunc <= shift_trunc + 1'b1;
-////          end
-//      end
-//  end
-  
-  reg [3:0] cap_state; 
-  always @ (posedge AdcFrmClk) begin
-      if (AdcDataValid[0] == 1'b0) begin
-        BRAM_PORTA_0_we <= 1'b0;
-        BRAM_PORTA_0_addr <= 14'd0;
-        BRAM_PORTA_0_din <= 128'd0;
-        
-        BRAM_PORTA_1_din <= 128'd0;
-        BRAM_PORTA_2_din <= 128'd0;
-        BRAM_PORTA_3_din <= 128'd0;
-        BRAM_PORTA_4_din <= 128'd0;
-        
-        cap_state <= 4'd0;
-        In0_0 <= 1'b0;
-      end else begin
-        case(cap_state)
-        4'd0: begin
-          if (gpio_posedge_0 == 2'b01) begin
-              BRAM_PORTA_0_we <= 1'b1;
-              BRAM_PORTA_0_addr <= 14'd0;
-              BRAM_PORTA_0_din = {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-//              BRAM_PORTA_0_din <= {AdcDataCh7, {6{2'b00, BRAM_PORTA_0_addr}}, AdcDataCh0};
-
-                BRAM_PORTA_1_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                BRAM_PORTA_2_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                BRAM_PORTA_3_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                BRAM_PORTA_4_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-              cap_state <= 4'd1;
-            end else begin
-              BRAM_PORTA_0_we <= 1'b0;
-              BRAM_PORTA_0_addr <= 14'd0;
-              BRAM_PORTA_0_din <= 128'd0;
-              cap_state <= 4'd0;
-            end 
-            In0_0 <= 1'b0;
-        end
-        4'd1: begin
-            if (BRAM_PORTA_0_addr == gpio_io_o_0[13:0]) begin
-                BRAM_PORTA_0_we <= 1'b0;
-                BRAM_PORTA_0_addr <= 14'd0;
-                BRAM_PORTA_0_din <= 128'd0;
-                cap_state <= 4'd2;
-            end else begin
-                BRAM_PORTA_0_we <= 1'b1;
-                BRAM_PORTA_0_addr <= BRAM_PORTA_0_addr + 1'b1;
-              BRAM_PORTA_0_din = {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-  //              BRAM_PORTA_0_din <= {AdcDataCh7, {6{2'b00, BRAM_PORTA_0_addr}}, AdcDataCh0};
-  
-                  BRAM_PORTA_1_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                  BRAM_PORTA_2_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                  BRAM_PORTA_3_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-                  BRAM_PORTA_4_din <= {16'd0, 16'd0, 16'd0, 16'd0, AdcDataCh3, AdcDataCh2, AdcDataCh1, AdcDataCh0};
-
-                cap_state <= 4'd1;
-            end 
-            In0_0 <= 1'b0;
-        end
-        4'd2: begin
-            BRAM_PORTA_0_we <= 1'b0;
-            BRAM_PORTA_0_addr <= 14'd0;
-            BRAM_PORTA_0_din <= 128'd0;
-            
-            BRAM_PORTA_1_din <= 128'd0;
-            BRAM_PORTA_2_din <= 128'd0;
-            BRAM_PORTA_3_din <= 128'd0;
-            BRAM_PORTA_4_din <= 128'd0;
-            
-            cap_state <= 4'd0;
-            In0_0 <= 1'b1;
-        end
-        default:;
-        endcase
-      end 
-  end
-  
-  design_1_wrapper design_1_i
-         (.DDR_0_addr(DDR_0_addr),
-          .DDR_0_ba(DDR_0_ba),
-          .DDR_0_cas_n(DDR_0_cas_n),
-          .DDR_0_ck_n(DDR_0_ck_n),
-          .DDR_0_ck_p(DDR_0_ck_p),
-          .DDR_0_cke(DDR_0_cke),
-          .DDR_0_cs_n(DDR_0_cs_n),
-          .DDR_0_dm(DDR_0_dm),
-          .DDR_0_dq(DDR_0_dq),
-          .DDR_0_dqs_n(DDR_0_dqs_n),
-          .DDR_0_dqs_p(DDR_0_dqs_p),
-          .DDR_0_odt(DDR_0_odt),
-          .DDR_0_ras_n(DDR_0_ras_n),
-          .DDR_0_reset_n(DDR_0_reset_n),
-          .DDR_0_we_n(DDR_0_we_n),
-          .FIXED_IO_0_ddr_vrn(FIXED_IO_0_ddr_vrn),
-          .FIXED_IO_0_ddr_vrp(FIXED_IO_0_ddr_vrp),
-          .FIXED_IO_0_mio(FIXED_IO_0_mio),
-          .FIXED_IO_0_ps_clk(FIXED_IO_0_ps_clk),
-          .FIXED_IO_0_ps_porb(FIXED_IO_0_ps_porb),
-          .FIXED_IO_0_ps_srstb(FIXED_IO_0_ps_srstb),
-
-            .BRAM_PORTA_0_addr(BRAM_PORTA_0_addr),
-            .BRAM_PORTA_0_clk(BRAM_PORTA_0_clk),
-            .BRAM_PORTA_0_din(BRAM_PORTA_0_din),
-            .BRAM_PORTA_0_we(BRAM_PORTA_0_we),
-            .BRAM_PORTA_1_addr(BRAM_PORTA_1_addr),
-            .BRAM_PORTA_1_clk(BRAM_PORTA_1_clk),
-            .BRAM_PORTA_1_din(BRAM_PORTA_1_din),
-            .BRAM_PORTA_1_we(BRAM_PORTA_1_we),
-            .BRAM_PORTA_2_addr(BRAM_PORTA_2_addr),
-            .BRAM_PORTA_2_clk(BRAM_PORTA_2_clk),
-            .BRAM_PORTA_2_din(BRAM_PORTA_2_din),
-            .BRAM_PORTA_2_we(BRAM_PORTA_2_we),
-            .BRAM_PORTA_3_addr(BRAM_PORTA_3_addr),
-            .BRAM_PORTA_3_clk(BRAM_PORTA_3_clk),
-            .BRAM_PORTA_3_din(BRAM_PORTA_3_din),
-            .BRAM_PORTA_3_we(BRAM_PORTA_3_we),
-            .BRAM_PORTA_4_addr(BRAM_PORTA_4_addr),
-            .BRAM_PORTA_4_clk(BRAM_PORTA_4_clk),
-            .BRAM_PORTA_4_din(BRAM_PORTA_4_din),
-            .BRAM_PORTA_4_we(BRAM_PORTA_4_we),
-            
-            .In0_0(In0_0),
-            .In1_0(In1_0),
-            .gpio_io_o_0(gpio_io_o_0),
-            
-          .spi_miso_i_0(spi_miso_i),
-          .spi_mosi_o_0(spi_mosi_o),
-          .spi_clk_o_0(spi_clk),
-          .spi_cs_o_0(spi_cs_o),
-          .spi_tri_o_0(spi_tri_o)
-          );
 endmodule
 
 //(* CORE_GENERATION_INFO = "dcm,clk_wiz_v3_6,{component_name=dcm,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=MMCM_ADV,num_out_clk=1,clkin1_period=8.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=MANUAL,manual_override=false}" *)
