@@ -31,7 +31,8 @@ module AdcLVDS #(
     parameter AdcDCLKFrequency = 182,
     parameter AdcFCLKFrequency = 26,
     parameter CLKFBOUT_MULT_F = 5,
-    parameter CLKOUT1_DIVIDE = 35
+    parameter CLKOUT1_DIVIDE = 35,
+    parameter AdcSyncExtClk = 1
 )
 (
     input DCLK_p_pin,
@@ -193,37 +194,112 @@ module AdcLVDS #(
 generate
 
 if (AdcSampFreDiv2 == 0) begin
-    assign AdcFrmClk = IntClkDiv;
-    assign AdcDataValid = IntDatAlignDone;
-    
-    if (AdcChnls == 1) begin
-        assign AdcDataCh0 = AdcData[15:0];
-    end else if (AdcChnls == 2) begin
-        assign AdcDataCh0 = AdcData[15:0];
-        assign AdcDataCh1 = AdcData[31:16];
-    end else if (AdcChnls == 4) begin
-        assign AdcDataCh0 = AdcData[15:0];
-        assign AdcDataCh1 = AdcData[31:16];
-        assign AdcDataCh2 = AdcData[47:32];
-        assign AdcDataCh3 = AdcData[63:48];
-    end else if (AdcChnls == 6) begin
-        assign AdcDataCh0 = AdcData[15:0];
-        assign AdcDataCh1 = AdcData[31:16];
-        assign AdcDataCh2 = AdcData[47:32];
-        assign AdcDataCh3 = AdcData[63:48];
-        assign AdcDataCh4 = AdcData[79:64];
-        assign AdcDataCh5 = AdcData[95:80];
-    end else if (AdcChnls == 8) begin
-        assign AdcDataCh0 = AdcData[15:0];
-        assign AdcDataCh1 = AdcData[31:16];
-        assign AdcDataCh2 = AdcData[47:32];
-        assign AdcDataCh3 = AdcData[63:48];
-        assign AdcDataCh4 = AdcData[79:64];
-        assign AdcDataCh5 = AdcData[95:80];
-        assign AdcDataCh6 = AdcData[111:96];
-        assign AdcDataCh7 = AdcData[127:112];
-    end
-    
+    if (AdcSyncExtClk == 1) begin
+
+        assign AdcFrmClk = AdcSampClk;
+        assign AdcDataValid = IntDatAlignDone;
+
+        wire s_axis_tready;
+        wire m_axis_tvalid;
+        wire [AdcChnls*4-1:0] m_axis_tkeep;
+        wire [16*AdcChnls*AdcWireMode-1:0] AdcDataSamp;
+
+        axis_async_fifo_adapter #(
+            .DEPTH(512),
+            .S_DATA_WIDTH(16*AdcChnls),
+            .M_DATA_WIDTH(16*AdcChnls),
+            .ID_ENABLE(0),
+            .ID_WIDTH(8),
+            .DEST_ENABLE(0),
+            .DEST_WIDTH(8),
+            .USER_ENABLE(0),
+            .USER_WIDTH(8),
+            .FRAME_FIFO(0),
+            .USER_BAD_FRAME_VALUE(1'b1),
+            .USER_BAD_FRAME_MASK(1'b1),
+            .DROP_BAD_FRAME(0),
+            .DROP_WHEN_FULL(0)
+        )
+        Inst_async_fifo (
+            // AXI input
+            .s_clk(IntClkDiv),
+            .s_rst(IntRst),
+            .s_axis_tdata (AdcData),
+            .s_axis_tkeep ({AdcChnls*4{1'b1}}),
+            .s_axis_tvalid(IntDatAlignDone[0]),
+            .s_axis_tready(s_axis_tready),
+            .s_axis_tlast (0),
+            // AXI output
+            .m_clk(AdcSampClk),
+            .m_rst(1'b0),
+            .m_axis_tdata (AdcDataSamp),
+            .m_axis_tkeep (m_axis_tkeep),
+            .m_axis_tvalid(m_axis_tvalid),
+            .m_axis_tready(1'b1),
+            .m_axis_tlast ()
+        );
+        
+        if (AdcChnls == 1) begin
+            assign AdcDataCh0 = AdcDataSamp[15:0];
+        end else if (AdcChnls == 2) begin
+            assign AdcDataCh0 = AdcDataSamp[15:0];
+            assign AdcDataCh1 = AdcDataSamp[31:16];
+        end else if (AdcChnls == 4) begin
+            assign AdcDataCh0 = AdcDataSamp[15:0];
+            assign AdcDataCh1 = AdcDataSamp[31:16];
+            assign AdcDataCh2 = AdcDataSamp[47:32];
+            assign AdcDataCh3 = AdcDataSamp[63:48];
+        end else if (AdcChnls == 6) begin
+            assign AdcDataCh0 = AdcDataSamp[15:0];
+            assign AdcDataCh1 = AdcDataSamp[31:16];
+            assign AdcDataCh2 = AdcDataSamp[47:32];
+            assign AdcDataCh3 = AdcDataSamp[63:48];
+            assign AdcDataCh4 = AdcDataSamp[79:64];
+            assign AdcDataCh5 = AdcDataSamp[95:80];
+        end else if (AdcChnls == 8) begin
+            assign AdcDataCh0 = AdcDataSamp[15:0];
+            assign AdcDataCh1 = AdcDataSamp[31:16];
+            assign AdcDataCh2 = AdcDataSamp[47:32];
+            assign AdcDataCh3 = AdcDataSamp[63:48];
+            assign AdcDataCh4 = AdcDataSamp[79:64];
+            assign AdcDataCh5 = AdcDataSamp[95:80];
+            assign AdcDataCh6 = AdcDataSamp[111:96];
+            assign AdcDataCh7 = AdcDataSamp[127:112];
+        end
+        
+    end else begin
+        assign AdcFrmClk = IntClkDiv;
+        assign AdcDataValid = IntDatAlignDone;
+        
+        if (AdcChnls == 1) begin
+            assign AdcDataCh0 = AdcData[15:0];
+        end else if (AdcChnls == 2) begin
+            assign AdcDataCh0 = AdcData[15:0];
+            assign AdcDataCh1 = AdcData[31:16];
+        end else if (AdcChnls == 4) begin
+            assign AdcDataCh0 = AdcData[15:0];
+            assign AdcDataCh1 = AdcData[31:16];
+            assign AdcDataCh2 = AdcData[47:32];
+            assign AdcDataCh3 = AdcData[63:48];
+        end else if (AdcChnls == 6) begin
+            assign AdcDataCh0 = AdcData[15:0];
+            assign AdcDataCh1 = AdcData[31:16];
+            assign AdcDataCh2 = AdcData[47:32];
+            assign AdcDataCh3 = AdcData[63:48];
+            assign AdcDataCh4 = AdcData[79:64];
+            assign AdcDataCh5 = AdcData[95:80];
+        end else if (AdcChnls == 8) begin
+            assign AdcDataCh0 = AdcData[15:0];
+            assign AdcDataCh1 = AdcData[31:16];
+            assign AdcDataCh2 = AdcData[47:32];
+            assign AdcDataCh3 = AdcData[63:48];
+            assign AdcDataCh4 = AdcData[79:64];
+            assign AdcDataCh5 = AdcData[95:80];
+            assign AdcDataCh6 = AdcData[111:96];
+            assign AdcDataCh7 = AdcData[127:112];
+        end
+    end 
+
 end else begin
     // 2x Sample => 1 Channel
     // AdcFrmClk => 2xAdcFrmClk = AdcSampClk
