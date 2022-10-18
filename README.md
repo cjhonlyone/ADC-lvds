@@ -1,4 +1,4 @@
-# ADC general LVDS Interface
+# ADC General LVDS Interface
 
 ## Generate IP
 
