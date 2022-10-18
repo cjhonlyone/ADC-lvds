@@ -21,7 +21,8 @@
 
 
 module AdcLane #(
-    parameter AdcBits = 14
+    parameter AdcBits = 14,
+    parameter AdcInvert = 0
 )
 (
     input           DatLine_p   ,
@@ -54,8 +55,14 @@ module AdcLane #(
                  .Q       (ADCDataLine )
              );
              assign DatData = {{2{ADCData[13]}},ADCData};
-             always @ (posedge DatClkDiv) begin
-                ADCData <= ADCDataLine;
+             if (AdcInvert == 0) begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ADCDataLine;
+                 end
+             end else begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ~ADCDataLine;
+                 end
              end
         end else if (AdcBits == 12) begin
 
@@ -73,8 +80,14 @@ module AdcLane #(
                  .Q       (ADCDataLine )
              );
              assign DatData = {{4{ADCData[11]}},ADCData};
-             always @ (posedge DatClkDiv) begin
-                ADCData <= ADCDataLine;// {ADCDataLine[11],~ADCDataLine[10],ADCDataLine[9],~ADCDataLine[8],ADCDataLine[7],~ADCDataLine[6],ADCDataLine[5],~ADCDataLine[4],ADCDataLine[3],~ADCDataLine[2],ADCDataLine[1],~ADCDataLine[0]};
+             if (AdcInvert == 0) begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ADCDataLine;
+                 end
+             end else begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ~ADCDataLine;
+                 end
              end
         end else if (AdcBits == 10) begin
 
@@ -92,8 +105,14 @@ module AdcLane #(
                  .Q       (ADCDataLine )
              );
              assign DatData = {{6{ADCData[9]}},ADCData};
-             always @ (posedge DatClkDiv) begin
-                ADCData <= ADCDataLine;
+             if (AdcInvert == 0) begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ADCDataLine;
+                 end
+             end else begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ~ADCDataLine;
+                 end
              end
         end else if (AdcBits == 8) begin
 
@@ -111,8 +130,14 @@ module AdcLane #(
                  .Q       (ADCDataLine )
              );
              assign DatData = {{8{ADCData[7]}},ADCData};
-             always @ (posedge DatClkDiv) begin
-                ADCData <= ADCDataLine;
+             if (AdcInvert == 0) begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ADCDataLine;
+                 end
+             end else begin
+                 always @ (posedge DatClkDiv) begin
+                    ADCData <= ~ADCDataLine;
+                 end
              end
         end
     

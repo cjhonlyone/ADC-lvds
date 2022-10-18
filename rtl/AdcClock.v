@@ -20,16 +20,18 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module AdcClock #(
-    parameter AdcDCLKFrequency = 182,
-    parameter AdcFCLKFrequency = 26,
-    parameter CLKFBOUT_MULT_F = 5,
-    parameter CLKOUT1_DIVIDE = 35
+    parameter AdcDCLKFrequency = 84,
+    parameter AdcFCLKFrequency = 12,
+    parameter CLKFBOUT_MULT_F = 12,
+    parameter CLKOUT1_DIVIDE = 84
 )
 (
   output        clk_out1,
   output        clk_out2,
   output        clk_out1b,
   output        clk_out2b,
+  output        clk_out3,
+  output        clk_out4,
   // Status and control signals
   input         reset,
   output        locked,
@@ -51,7 +53,8 @@ localparam CLKIN1_PERIOD = 1000/AdcDCLKFrequency;
 
 localparam CLKOUT0_DIVIDE_F = CLKFBOUT_MULT_F;
 // localparam CLKOUT1_DIVIDE = CLKFBOUT_MULT_F*AdcDCLKFrequency/AdcFCLKFrequency;
-
+localparam CLKOUT2_DIVIDE = 42;
+localparam CLKOUT3_DIVIDE = 21;
   // Input buffering
   //------------------------------------
 wire clk_in1_clk_wiz_0;
@@ -116,6 +119,14 @@ wire clk_in2_clk_wiz_0;
     .CLKOUT1_PHASE        (00.000),
     .CLKOUT1_DUTY_CYCLE   (0.500),
     .CLKOUT1_USE_FINE_PS  ("FALSE"),
+    .CLKOUT2_DIVIDE       (CLKOUT2_DIVIDE),
+    .CLKOUT2_PHASE        (00.000),
+    .CLKOUT2_DUTY_CYCLE   (0.500),
+    .CLKOUT2_USE_FINE_PS  ("FALSE"),
+    .CLKOUT3_DIVIDE       (CLKOUT3_DIVIDE),
+    .CLKOUT3_PHASE        (00.000),
+    .CLKOUT3_DUTY_CYCLE   (0.500),
+    .CLKOUT3_USE_FINE_PS  ("FALSE"),
     .CLKIN1_PERIOD        (CLKIN1_PERIOD))
   mmcm_adv_inst
     // Output clocks
@@ -126,10 +137,10 @@ wire clk_in2_clk_wiz_0;
     .CLKOUT0B            (clk_out1_clk_wiz_0b),
     .CLKOUT1             (clk_out2_clk_wiz_0),
     .CLKOUT1B            (clk_out2_clk_wiz_0b),
-    .CLKOUT2             (clkout2_unused),
-    .CLKOUT2B            (clkout2b_unused),
-    .CLKOUT3             (clkout3_unused),
-    .CLKOUT3B            (clkout3b_unused),
+    .CLKOUT2             (clk_out3_clk_wiz_0),
+    .CLKOUT2B            (clk_out3_clk_wiz_0b),
+    .CLKOUT3             (clk_out4_clk_wiz_0),
+    .CLKOUT3B            (clk_out4_clk_wiz_0b),
     .CLKOUT4             (clkout4_unused),
     .CLKOUT5             (clkout5_unused),
     .CLKOUT6             (clkout6_unused),
@@ -188,4 +199,13 @@ wire clk_in2_clk_wiz_0;
   BUFG clkout2_bufb
    (.O   (clk_out2b),
     .I   (clk_out2_clk_wiz_0b));
+
+  BUFG clkout3_buf
+   (.O   (clk_out3),
+    .I   (clk_out3_clk_wiz_0));
+
+  BUFG clkout4_buf
+   (.O   (clk_out4),
+    .I   (clk_out4_clk_wiz_0));
+    
 endmodule

@@ -21,18 +21,19 @@
 
 
 module AdcLVDS #(
-    parameter AdcChnls = 8,     // Number of ADC in a package
-    parameter AdcBits = 12,
+    parameter AdcChnls = 2,     // Number of ADC in a package
+    parameter AdcBits = 14,
     parameter AdcBitOrByteMode = 1, // 1 = BIT mode, 0 = BYTE mode
     parameter AdcMsbOrLsbFst = 1, // 1 = MSB first, 0 = LSB first
-    parameter AdcWireMode = 1, // 1 = 1-wire, 2 = 2-wire
-    parameter AdcFrmPattern = 16'b0000111111000000,
-    parameter AdcSampFreDiv2 = 0,
-    parameter AdcDCLKFrequency = 182,
-    parameter AdcFCLKFrequency = 26,
-    parameter CLKFBOUT_MULT_F = 5,
-    parameter CLKOUT1_DIVIDE = 35,
-    parameter AdcSyncExtClk = 1
+    parameter AdcWireMode = 2, // 1 = 1-wire, 2 = 2-wire
+    parameter AdcFrmPattern = 16'b0011111110000000,
+    parameter AdcSampFreDiv2 = 1,
+    parameter AdcDCLKFrequency = 84,
+    parameter AdcFCLKFrequency = 12,
+    parameter CLKFBOUT_MULT_F = 12,
+    parameter CLKOUT1_DIVIDE = 84,
+    parameter AdcSyncExtClk = 0,
+    parameter AdcLaneInvert = 8'b00001100
 )
 (
     input DCLK_p_pin,
@@ -41,12 +42,11 @@ module AdcLVDS #(
     input FCLK_n_pin,
     input [(AdcChnls*AdcWireMode)-1 : 0] DATA_p_pin,
     input [(AdcChnls*AdcWireMode)-1 : 0] DATA_n_pin,
-    
-    input SysRst,
-    
+
     input  AdcSampClk,
     
     output AdcFrmClk, 
+    output AdcFrmClk2x, 
     output [7:0] AdcDataValid,
     output [15:0] AdcDataCh0,
     output [15:0] AdcDataCh1,
@@ -64,8 +64,11 @@ module AdcLVDS #(
     wire IntClkb;
     wire IntClkDivb;
     wire IntBitClkDone;
+
+    wire IntSampleClk;
+    wire IntSampleClk2x;
     
-    wire AdcIntrfcRst = SysRst | (~IntBitClkDone);
+    wire AdcIntrfcRst = (~IntBitClkDone);
     wire AdcIntrfcEna = 1     ;
     wire AdcReSync = 0       ;
     wire AdcIdlyCtrlRdy   ;
@@ -118,10 +121,12 @@ module AdcLVDS #(
             .CLKFBOUT_MULT_F(CLKFBOUT_MULT_F),
             .CLKOUT1_DIVIDE(CLKOUT1_DIVIDE)
         ) inst_AdcClock (
-            .clk_out1  (IntClk),
-            .clk_out2  (IntClkDiv),
+            .clk_out1  (IntClk), // 84
+            .clk_out2  (IntClkDiv), // 12
             .clk_out1b (IntClkb),
             .clk_out2b (IntClkDivb),
+            .clk_out3  (IntSampleClk), // 24
+            .clk_out4  (IntSampleClk2x), // 48
             .reset     (0),
             .locked    (IntBitClkDone),
             .clk_in1_p (DCLK_p_pin),
@@ -154,7 +159,8 @@ module AdcLVDS #(
         for (i = 0;i<(AdcChnls*AdcWireMode);i=i+1)
         begin
         AdcLane #(
-                .AdcBits(AdcBits)
+                .AdcBits(AdcBits),
+                .AdcInvert(AdcLaneInvert[i])
             ) inst_AdcLane (
                 .DatLine_p    (IntDATA_p[i]),
                 .DatLine_n    (IntDATA_n[i]),
@@ -201,7 +207,7 @@ if (AdcSampFreDiv2 == 0) begin
 
         wire s_axis_tready;
         wire m_axis_tvalid;
-        wire [AdcChnls*4-1:0] m_axis_tkeep;
+        wire [AdcChnls*2-1:0] m_axis_tkeep;
         wire [16*AdcChnls*AdcWireMode-1:0] AdcDataSamp;
 
         axis_async_fifo_adapter #(
@@ -268,14 +274,15 @@ if (AdcSampFreDiv2 == 0) begin
         end
         
     end else begin
-        assign AdcFrmClk = IntClkDiv;
+//        assign AdcFrmClk = IntClkDiv;
+//        assign AdcFrmClk2x = IntClkDiv2x;
         assign AdcDataValid = IntDatAlignDone;
         
         if (AdcChnls == 1) begin
             assign AdcDataCh0 = AdcData[15:0];
         end else if (AdcChnls == 2) begin
             assign AdcDataCh0 = AdcData[15:0];
-            assign AdcDataCh1 = AdcData[31:16];
+            assign AdcDataCh1 = ~AdcData[31:16];
         end else if (AdcChnls == 4) begin
             assign AdcDataCh0 = AdcData[15:0];
             assign AdcDataCh1 = AdcData[31:16];
@@ -310,7 +317,7 @@ end else begin
         assign AdcDataSampThis[(i+1)*16-1:i*16] = AdcData[i*32+16-1:i*32];
         assign AdcDataSampNext[(i+1)*16-1:i*16] = AdcData[i*32+16-1+16:i*32+16];
     end
-
+    
     wire [16*AdcChnls*AdcWireMode-1:0] AdcDataSamp;
 
     wire s_axis_tready;
@@ -343,7 +350,7 @@ end else begin
         .s_axis_tready(s_axis_tready),
         .s_axis_tlast (0),
         // AXI output
-        .m_clk(AdcSampClk),
+        .m_clk(IntSampleClk),
         .m_rst(1'b0),
         .m_axis_tdata (AdcDataSamp),
         .m_axis_tkeep (m_axis_tkeep),
@@ -352,14 +359,22 @@ end else begin
         .m_axis_tlast ()
     );
 
-    assign AdcFrmClk = AdcSampClk;
+    assign AdcFrmClk = IntSampleClk;
+    assign AdcFrmClk2x = IntSampleClk2x;
     assign AdcDataValid = IntDatAlignDone;
+    
+//    reg [15:0] AdcPattern;
+//    always @ (posedge AdcFrmClk) begin
+//        AdcPattern <= AdcPattern + 1'b1;
+//    end
     
     if (AdcChnls == 1) begin
         assign AdcDataCh0 = AdcDataSamp[15:0];
     end else if (AdcChnls == 2) begin
         assign AdcDataCh0 = AdcDataSamp[15:0];
         assign AdcDataCh1 = AdcDataSamp[31:16];
+//        assign AdcDataCh0 = AdcPattern;
+//        assign AdcDataCh1 = AdcPattern; 
     end else if (AdcChnls == 4) begin
         assign AdcDataCh0 = AdcDataSamp[15:0];
         assign AdcDataCh1 = AdcDataSamp[31:16];
