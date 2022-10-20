@@ -53,8 +53,8 @@ localparam CLKIN1_PERIOD = 1000/AdcDCLKFrequency;
 
 localparam CLKOUT0_DIVIDE_F = CLKFBOUT_MULT_F;
 // localparam CLKOUT1_DIVIDE = CLKFBOUT_MULT_F*AdcDCLKFrequency/AdcFCLKFrequency;
-localparam CLKOUT2_DIVIDE = 42;
-localparam CLKOUT3_DIVIDE = 21;
+localparam CLKOUT2_DIVIDE = CLKOUT1_DIVIDE;
+localparam CLKOUT3_DIVIDE = CLKOUT1_DIVIDE/2;
   // Input buffering
   //------------------------------------
 wire clk_in1_clk_wiz_0;
